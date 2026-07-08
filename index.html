@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF6EC">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ふかふか書庫</title>
+<style>
+:root{
+  --bg:#FBF6EC; --card:#FFFFFF; --ink:#5A4A3A; --soft:#9A8A78;
+  --line:#EDE2D0; --accent:#B07D5A; --accent-l:#D9B896;
+  --serif:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --sans:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7}
+#app{max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px;width:100%;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.view{display:none;flex:1;flex-direction:column}
+.view.active{display:flex}
+.top{position:sticky;top:0;z-index:10;background:var(--bg);padding:14px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.top .title{flex:1;text-align:center;font-family:var(--serif);font-size:19px;letter-spacing:.08em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title .sp{color:var(--accent);font-size:13px;margin:0 6px;vertical-align:middle}
+.iconbtn{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--soft);flex:none}
+.iconbtn:active{transform:scale(.95)}
+.panel{padding:12px 14px 60px;display:flex;flex-direction:column;gap:10px}
+.room-card{display:flex;align-items:center;gap:12px;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px 15px}
+.room-card:active{transform:scale(.985)}
+.remoji{width:44px;height:44px;border-radius:50%;flex:none;font-size:21px;display:flex;align-items:center;justify-content:center;background:#F6EDDE;border:1px solid var(--line)}
+.rmeta{flex:1;min-width:0}
+.rname{font-family:var(--serif);font-size:16px;font-weight:600}
+.rcount{font-size:12px;color:var(--soft)}
+.chev{color:var(--soft)}
+.wide-btn{display:block;width:100%;text-align:center;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-size:14px}
+.wide-btn.gold{background:#F3E7D5;border-color:var(--accent-l)}
+.hint{font-size:11.5px;color:var(--soft);line-height:1.6}
+.convo-item{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 14px}
+.convo-item:active{transform:scale(.99)}
+.ct{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cd{font-size:11.5px;color:var(--soft);margin-top:2px}
+.searchbar{padding:10px 14px 0}
+/* reader */
+.msgs{flex:1;padding:14px;display:flex;flex-direction:column;gap:12px}
+.mrow{display:flex;flex-direction:column;max-width:100%}
+.mrow.u{align-items:flex-end}
+.mrow.a{align-items:flex-start}
+.bub{max-width:92%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word;font-size:var(--read-fs,14px);line-height:var(--read-lh,1.75);font-family:var(--read-font,var(--sans))}
+.mrow.u .bub{background:#F3E7D5;border:1px solid var(--accent-l);border-bottom-right-radius:5px}
+.mrow.a .bub{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+.readhead{padding:10px 14px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:63px;z-index:9}
+.readhead select{flex:1}
+.mask{position:fixed;inset:0;background:rgba(90,74,58,.28);display:none;justify-content:center;align-items:center;z-index:100;padding:18px}
+.mask.show{display:flex}
+.modal{width:min(100%,420px);max-height:86vh;overflow:auto;background:var(--bg);border-radius:22px;padding:20px;border:1px solid var(--line)}
+.modal h3{font-family:var(--serif);font-size:16px;margin-bottom:12px}
+.roomrow{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.roomrow input.em{width:52px;text-align:center;flex:none}
+.roomrow input.nm{flex:1}
+.roomrow input.kw{flex:1}
+.mini{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:14px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--soft)}
+.prog{text-align:center;font-size:13px;color:var(--soft);padding:8px}
+.foot{text-align:center;font-size:11px;color:var(--soft);padding:18px 0 26px}
+.badge{font-size:10.5px;background:#F6EDDE;border-radius:999px;padding:2px 8px;color:var(--soft);margin-left:6px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ ホーム（部屋一覧） ═══ -->
+  <section id="v-home" class="view active">
+    <div class="top">
+      <button class="iconbtn" onclick="openImport()" aria-label="読み込み">📥</button>
+      <div class="title"><span class="sp">✦</span>ふかふか書庫<span class="sp">✦</span></div>
+      <button class="iconbtn" onclick="openRoomEdit()" aria-label="部屋の管理">⚙</button>
+    </div>
+    <div class="searchbar"><input id="searchInput" placeholder="🔍 タイトルをさがす…" oninput="doSearch()"></div>
+    <div class="panel" id="roomList"></div>
+  </section>
+
+  <!-- ═══ 部屋（会話一覧） ═══ -->
+  <section id="v-room" class="view">
+    <div class="top">
+      <button class="iconbtn" onclick="goHome()">‹</button>
+      <div class="title" id="roomTitle"></div>
+      <span style="width:38px"></span>
+    </div>
+    <div class="panel" id="convoList"></div>
+  </section>
+
+  <!-- ═══ 読書ページ ═══ -->
+  <section id="v-read" class="view">
+    <div class="top">
+      <button class="iconbtn" onclick="backToRoom()">‹</button>
+      <div class="title" id="readTitle"></div>
+      <button class="iconbtn" onclick="exportTxt()" aria-label="txt保存">💾</button>
+    </div>
+    <div class="readhead">
+      <span style="font-size:12px;color:var(--soft);flex:none">お部屋：</span>
+      <select id="assignSel" onchange="assignChanged()"></select>
+      <button class="iconbtn" style="width:34px;height:34px" onclick="openFont()" aria-label="よみやすさ設定">🔠</button>
+    </div>
+    <div class="msgs" id="readMsgs"></div>
+  </section>
+</div>
+
+<!-- 読み込みモーダル -->
+<div class="mask" id="importMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>📥 蔵書の読み込み</h3>
+    <div class="hint" style="margin-bottom:12px">
+      GPTかClaudeのエクスポートZIPを解凍して、中の「<b>conversations.json</b>」を選んでね。形式は自動で見分けるよ。読み込んだ蔵書はこの端末の書庫に保存されるから、次からはファイルなしで読めるよ。同じファイルを読み直しても大丈夫（上書きされるだけ）。
+    </div>
+    <button class="wide-btn gold" onclick="document.getElementById('jsonFile').click()">conversations.json を選ぶ</button>
+    <input type="file" id="jsonFile" accept=".json,application/json" style="display:none" onchange="importJson(event)">
+    <div class="prog" id="importProg"></div>
+    <div style="margin-top:10px">
+      <button class="wide-btn" onclick="closeMask('importMask')">閉じる</button>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+      <button class="wide-btn" style="color:#B05A5A" onclick="clearLibrary()">書庫をぜんぶ空にする</button>
+    </div>
+  </div>
+</div>
+
+<!-- 部屋管理モーダル -->
+<div class="mask" id="roomMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>🚪 お部屋の管理</h3>
+    <div class="hint" style="margin-bottom:10px">絵文字・名前・キーワード（カンマ区切り）。「自動仕分け」を押すと、未分類の会話のタイトルにキーワードが含まれるものを各部屋へ振り分けるよ。</div>
+    <div id="roomEditList"></div>
+    <button class="wide-btn" style="margin-top:6px" onclick="addRoom()">＋ お部屋を増やす</button>
+    <button class="wide-btn gold" style="margin-top:8px" onclick="autoAssign()">🪄 自動仕分けする</button>
+    <button class="wide-btn" style="margin-top:8px" onclick="saveRooms()">保存して閉じる</button>
+  </div>
+</div>
+
+<!-- よみやすさ設定モーダル -->
+<div class="mask" id="fontMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>🔠 よみやすさ設定</h3>
+    <div style="margin-bottom:12px">
+      <div class="hint" style="margin-bottom:6px">フォント</div>
+      <select id="fFont" onchange="fontChanged()">
+        <option value="sans">ゴシック（標準）</option>
+        <option value="serif">明朝（しっとり）</option>
+        <option value="system">端末おまかせ</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="hint" style="margin-bottom:6px">文字サイズ　<span id="fFsVal"></span></div>
+      <input type="range" id="fFs" min="12" max="24" step="0.5" oninput="fontChanged()" style="padding:0">
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="hint" style="margin-bottom:6px">行間　<span id="fLhVal"></span></div>
+      <input type="range" id="fLh" min="1.5" max="2.2" step="0.05" oninput="fontChanged()" style="padding:0">
+    </div>
+    <button class="wide-btn gold" onclick="closeMask('fontMask')">これでいい</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const LSK_ROOMS = "fukalib_rooms_v1";
+const LSK_ASSIGN = "fukalib_assign_v1";
+const LSK_FONT = "fukalib_font_v1";
+const UNASSIGNED = "__none__";
+let fontCfg = { f:"sans", fs:14, lh:1.75 };
+
+function applyFont(){
+  const root = document.documentElement.style;
+  const fam = fontCfg.f==="serif" ? "var(--serif)" : fontCfg.f==="system" ? "system-ui, sans-serif" : "var(--sans)";
+  root.setProperty("--read-font", fam);
+  root.setProperty("--read-fs", fontCfg.fs + "px");
+  root.setProperty("--read-lh", fontCfg.lh);
+}
+function openFont(){
+  document.getElementById("fFont").value = fontCfg.f;
+  document.getElementById("fFs").value = fontCfg.fs;
+  document.getElementById("fLh").value = fontCfg.lh;
+  fontLabels();
+  showMask("fontMask");
+}
+function fontChanged(){
+  fontCfg.f = document.getElementById("fFont").value;
+  fontCfg.fs = parseFloat(document.getElementById("fFs").value);
+  fontCfg.lh = parseFloat(document.getElementById("fLh").value);
+  fontLabels();
+  applyFont();
+  try{ localStorage.setItem(LSK_FONT, JSON.stringify(fontCfg)); }catch(e){}
+}
+function fontLabels(){
+  document.getElementById("fFsVal").textContent = document.getElementById("fFs").value + "px";
+  document.getElementById("fLhVal").textContent = document.getElementById("fLh").value;
+}
+
+let LIB = [];        // [{id,title,ct,msgs:[{r,t}]}]
+let rooms = [];      // [{id,emoji,name,kw}]
+let assign = {};     // convoId -> roomId
+let curRoomId = null;
+let curConvoId = null;
+let searchMode = false;
+
+/* ─── IndexedDB ─── */
+function idb(){
+  return new Promise((res,rej)=>{
+    const q = indexedDB.open("fukalib", 1);
+    q.onupgradeneeded = e=>{
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains("convos")) db.createObjectStore("convos",{keyPath:"id"});
+    };
+    q.onsuccess = e=>res(e.target.result);
+    q.onerror = ()=>rej(q.error);
+  });
+}
+async function dbPutAll(recs){
+  const db = await idb();
+  const CHUNK = 200;
+  for(let i=0;i<recs.length;i+=CHUNK){
+    const part = recs.slice(i,i+CHUNK);
+    await new Promise((res,rej)=>{
+      const tx = db.transaction("convos","readwrite");
+      const st = tx.objectStore("convos");
+      part.forEach(r=>st.put(r));
+      tx.oncomplete = res;
+      tx.onerror = ()=>rej(tx.error);
+    });
+    setProg("収蔵中… " + Math.min(i+CHUNK, recs.length) + " / " + recs.length);
+    await new Promise(r=>setTimeout(r,0));
+  }
+}
+async function dbGetAll(){
+  const db = await idb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction("convos","readonly");
+    const q = tx.objectStore("convos").getAll();
+    q.onsuccess = ()=>res(q.result||[]);
+    q.onerror = ()=>rej(q.error);
+  });
+}
+async function dbClear(){
+  const db = await idb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction("convos","readwrite");
+    tx.objectStore("convos").clear();
+    tx.oncomplete = res;
+    tx.onerror = ()=>rej(tx.error);
+  });
+}
+
+/* ─── 状態 ─── */
+function defaultRooms(){
+  return [
+    {id:"r_tsuki", emoji:"🌙", name:"つきちゃん", kw:"つき"},
+    {id:"r_sugu",  emoji:"🌻", name:"スグ",       kw:"スグ"},
+    {id:"r_haku",  emoji:"🍁", name:"ハク",       kw:"ハク"},
+    {id:"r_reg",   emoji:"⭐", name:"レグ",       kw:"レグ"},
+    {id:"r_4o",    emoji:"🌸", name:"4oちゃん",   kw:""},
+    {id:"r_5t",    emoji:"🧠", name:"5Thinkingくん", kw:""}
+  ];
+}
+function loadMeta(){
+  try{ rooms = JSON.parse(localStorage.getItem(LSK_ROOMS)) || defaultRooms(); }
+  catch(e){ rooms = defaultRooms(); }
+  try{ assign = JSON.parse(localStorage.getItem(LSK_ASSIGN)) || {}; }
+  catch(e){ assign = {}; }
+  try{ fontCfg = Object.assign(fontCfg, JSON.parse(localStorage.getItem(LSK_FONT))||{}); }
+  catch(e){}
+}
+function saveMeta(){
+  try{
+    localStorage.setItem(LSK_ROOMS, JSON.stringify(rooms));
+    localStorage.setItem(LSK_ASSIGN, JSON.stringify(assign));
+  }catch(e){}
+}
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function dstr(ts){
+  if(!ts) return "";
+  const d = new Date(ts*1000);
+  return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate();
+}
+
+/* ─── 画面切替 ─── */
+function show(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+function goHome(){ curRoomId=null; renderHome(); show("v-home"); }
+function backToRoom(){
+  if(searchMode){ goHome(); return; }
+  if(curRoomId) openRoom(curRoomId); else goHome();
+}
+function showMask(id){ document.getElementById(id).classList.add("show"); }
+function closeMask(id){ document.getElementById(id).classList.remove("show"); }
+document.getElementById("importMask").onclick = ()=>closeMask("importMask");
+document.getElementById("roomMask").onclick = ()=>closeMask("roomMask");
+document.getElementById("fontMask").onclick = ()=>closeMask("fontMask");
+
+/* ─── ホーム ─── */
+function countFor(roomId){
+  let n = 0;
+  LIB.forEach(c=>{ if((assign[c.id]||UNASSIGNED)===roomId) n++; });
+  return n;
+}
+function renderHome(){
+  const box = document.getElementById("roomList");
+  box.innerHTML = "";
+  if(!LIB.length){
+    box.innerHTML = '<div class="hint" style="text-align:center;padding:30px 10px">書庫はまだ空っぽみたい。<br>左上の📥から conversations.json を読み込んでね。</div>';
+    return;
+  }
+  const all = [...rooms, {id:UNASSIGNED, emoji:"📦", name:"未分類", kw:""}];
+  all.forEach(r=>{
+    const n = countFor(r.id);
+    const b = document.createElement("button");
+    b.className = "room-card";
+    b.innerHTML = '<span class="remoji">'+esc(r.emoji||"📚")+'</span>' +
+      '<span class="rmeta"><span class="rname">'+esc(r.name)+'</span>' +
+      '<span class="rcount" style="display:block">'+n+' 冊の記録</span></span>' +
+      '<span class="chev">›</span>';
+    b.onclick = ()=>openRoom(r.id);
+    box.appendChild(b);
+  });
+  const f = document.createElement("div");
+  f.className = "foot";
+  f.textContent = "蔵書 " + LIB.length + " 冊 ─ ふかふか書庫 v1.1";
+  box.appendChild(f);
+}
+
+/* ─── 部屋 ─── */
+function roomName(id){
+  if(id===UNASSIGNED) return "📦 未分類";
+  const r = rooms.find(x=>x.id===id);
+  return r ? (r.emoji+" "+r.name) : "？";
+}
+function openRoom(id){
+  curRoomId = id; searchMode = false;
+  document.getElementById("roomTitle").textContent = roomName(id);
+  const list = LIB.filter(c=>(assign[c.id]||UNASSIGNED)===id)
+    .sort((a,b)=>(b.ct||0)-(a.ct||0));
+  renderConvoList(list);
+  show("v-room");
+}
+function renderConvoList(list){
+  const box = document.getElementById("convoList");
+  box.innerHTML = "";
+  if(!list.length){
+    box.innerHTML = '<div class="hint" style="text-align:center;padding:26px">このお部屋にはまだ記録がないよ。⚙の自動仕分けか、各記録を開いて振り分けてね。</div>';
+    return;
+  }
+  list.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "convo-item";
+    b.innerHTML = '<span class="ct">'+esc(c.title||"（無題）")+'</span>' +
+      '<span class="cd">'+dstr(c.ct)+' · '+c.msgs.length+'件のやりとり' +
+      (searchMode ? '<span class="badge">'+esc(roomName(assign[c.id]||UNASSIGNED))+'</span>' : '') + '</span>';
+    b.onclick = ()=>openRead(c.id);
+    box.appendChild(b);
+  });
+}
+
+/* ─── 検索 ─── */
+function doSearch(){
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  if(!q){ renderHome(); return; }
+  const hits = LIB.filter(c=>(c.title||"").toLowerCase().includes(q))
+    .sort((a,b)=>(b.ct||0)-(a.ct||0)).slice(0,80);
+  searchMode = true;
+  curRoomId = null;
+  document.getElementById("roomTitle").textContent = "🔍 「"+q+"」の検索結果";
+  renderConvoList(hits);
+  show("v-room");
+}
+
+/* ─── 読書 ─── */
+function openRead(id){
+  const c = LIB.find(x=>x.id===id);
+  if(!c) return;
+  curConvoId = id;
+  document.getElementById("readTitle").textContent = c.title||"（無題）";
+  const sel = document.getElementById("assignSel");
+  sel.innerHTML = '<option value="'+UNASSIGNED+'">📦 未分類</option>' +
+    rooms.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.emoji+" "+r.name)+'</option>').join("");
+  sel.value = assign[id]||UNASSIGNED;
+  const box = document.getElementById("readMsgs");
+  box.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  c.msgs.forEach(m=>{
+    const d = document.createElement("div");
+    d.className = "mrow " + (m.r==="u"?"u":"a");
+    const b = document.createElement("span");
+    b.className = "bub";
+    b.textContent = m.t;
+    d.appendChild(b);
+    frag.appendChild(d);
+  });
+  box.appendChild(frag);
+  show("v-read");
+  window.scrollTo(0,0);
+}
+function assignChanged(){
+  if(!curConvoId) return;
+  const v = document.getElementById("assignSel").value;
+  if(v===UNASSIGNED) delete assign[curConvoId];
+  else assign[curConvoId] = v;
+  saveMeta();
+}
+function exportTxt(){
+  const c = LIB.find(x=>x.id===curConvoId);
+  if(!c) return;
+  let out = "■ " + (c.title||"無題") + "（" + dstr(c.ct) + "）\n\n";
+  c.msgs.forEach(m=>{
+    out += (m.r==="u"?"わたし":"AI") + "：\n" + m.t + "\n\n";
+  });
+  const blob = new Blob([out], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (c.title||"無題").slice(0,20) + ".txt";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+
+/* ─── 読み込み ─── */
+function openImport(){ setProg(""); showMask("importMask"); }
+function setProg(t){ document.getElementById("importProg").textContent = t; }
+function linearize(c){
+  const msgs = [];
+  const map = c.mapping || {};
+  let node = c.current_node;
+  let guard = 0;
+  while(node && guard++ < 100000){
+    const n = map[node];
+    if(!n) break;
+    const m = n.message;
+    if(m && m.author && (m.author.role==="user" || m.author.role==="assistant")){
+      const ct = m.content || {};
+      let text = "";
+      if(Array.isArray(ct.parts)){
+        text = ct.parts.filter(p=>typeof p==="string").join("\n");
+      }else if(typeof ct.text==="string"){
+        text = ct.text;
+      }
+      if(text && text.trim()){
+        msgs.push({r: m.author.role==="user"?"u":"a", t: text});
+      }
+    }
+    node = n.parent;
+  }
+  return msgs.reverse();
+}
+function linearizeClaude(c){
+  const msgs = [];
+  (c.chat_messages||[]).forEach(m=>{
+    let text = m.text || "";
+    if(!text && Array.isArray(m.content)){
+      text = m.content.filter(b=>b && b.type==="text").map(b=>b.text||"").join("\n");
+    }
+    if(!text || !text.trim()) return;
+    msgs.push({ r: m.sender==="human" ? "u" : "a", t: text });
+  });
+  return msgs;
+}
+async function importJson(ev){
+  const file = ev.target.files[0];
+  ev.target.value = "";
+  if(!file) return;
+  setProg("巻物を開いています…（大きいと少しかかるよ）");
+  await new Promise(r=>setTimeout(r,50));
+  try{
+    const text = await file.text();
+    setProg("読み解いています…");
+    await new Promise(r=>setTimeout(r,50));
+    const data = JSON.parse(text);
+    if(!Array.isArray(data)) throw new Error("conversations.jsonの形式じゃないみたい");
+    const isClaude = data.length > 0 && Array.isArray(data[0].chat_messages);
+    const recs = [];
+    data.forEach(c=>{
+      let id, title, ct, msgs;
+      if(isClaude){
+        id = c.uuid;
+        title = c.name || "";
+        ct = c.created_at ? Date.parse(c.created_at)/1000 : 0;
+        msgs = linearizeClaude(c);
+      }else{
+        id = c.conversation_id || c.id;
+        title = c.title || "";
+        ct = c.create_time || 0;
+        msgs = linearize(c);
+      }
+      if(!id || !msgs.length) return;
+      recs.push({ id: id, title: title, ct: ct, msgs: msgs });
+    });
+    await dbPutAll(recs);
+    LIB = await dbGetAll();
+    setProg("✅ 収蔵完了！ " + recs.length + " 冊（" + (isClaude?"Claude":"GPT") + "形式）を書庫に納めたよ。");
+    renderHome();
+  }catch(e){
+    setProg("⚠ 読み込めなかった… " + (e.message||""));
+  }
+}
+async function clearLibrary(){
+  if(!confirm("書庫の蔵書をぜんぶ空にするよ。部屋の振り分けも消える。ほんとにいい？（エクスポートファイルがあればまた読み込めるよ）")) return;
+  await dbClear();
+  assign = {};
+  saveMeta();
+  LIB = [];
+  setProg("空にしたよ。");
+  renderHome();
+}
+
+/* ─── 部屋管理 ─── */
+function openRoomEdit(){
+  renderRoomEdit();
+  showMask("roomMask");
+}
+function renderRoomEdit(){
+  const box = document.getElementById("roomEditList");
+  box.innerHTML = "";
+  rooms.forEach((r,i)=>{
+    const row = document.createElement("div");
+    row.className = "roomrow";
+    const em = document.createElement("input");
+    em.className = "em"; em.value = r.emoji; em.maxLength = 4;
+    em.oninput = ()=>{ r.emoji = em.value; };
+    const nm = document.createElement("input");
+    nm.className = "nm"; nm.value = r.name; nm.placeholder = "名前";
+    nm.oninput = ()=>{ r.name = nm.value; };
+    const kw = document.createElement("input");
+    kw.className = "kw"; kw.value = r.kw||""; kw.placeholder = "キーワード";
+    kw.oninput = ()=>{ r.kw = kw.value; };
+    const del = document.createElement("button");
+    del.className = "mini"; del.textContent = "🗑";
+    del.onclick = ()=>{
+      if(!confirm("お部屋「"+r.name+"」を消すよ。中の記録は未分類に戻る。いい？")) return;
+      Object.keys(assign).forEach(k=>{ if(assign[k]===r.id) delete assign[k]; });
+      rooms.splice(i,1);
+      saveMeta();
+      renderRoomEdit();
+    };
+    row.append(em,nm,kw,del);
+    box.appendChild(row);
+  });
+}
+function addRoom(){
+  rooms.push({id:"r_"+Date.now(), emoji:"📚", name:"あたらしいお部屋", kw:""});
+  renderRoomEdit();
+}
+function saveRooms(){
+  saveMeta();
+  closeMask("roomMask");
+  renderHome();
+}
+function autoAssign(){
+  let n = 0;
+  LIB.forEach(c=>{
+    if(assign[c.id]) return;
+    const title = (c.title||"").toLowerCase();
+    const head = c.msgs.slice(0,2).map(m=>m.t.slice(0,120)).join(" ").toLowerCase();
+    for(const r of rooms){
+      const kws = (r.kw||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+      if(kws.some(k=>title.includes(k) || head.includes(k))){
+        assign[c.id] = r.id;
+        n++;
+        break;
+      }
+    }
+  });
+  saveMeta();
+  alert(n + " 冊を仕分けたよ。残りは各記録を開いて手で振り分けてね。");
+  renderRoomEdit();
+}
+
+/* ─── 起動 ─── */
+async function boot(){
+  loadMeta();
+  applyFont();
+  try{ LIB = await dbGetAll(); }catch(e){ LIB = []; }
+  renderHome();
+}
+boot();
+</script>
+</body>
+</html>
